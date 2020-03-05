@@ -1,0 +1,12 @@
+{
+  "name": "dvf-logger",
+  "version": "0.1.0",
+  "description": "a thin wrapper around debug module",
+  "main": "index.js",
+  "repository": "git@github.com:DeversiFi/logger.git",
+  "author": "Adrian Gierakowski <adrian.gierakowski@deversifi.com>",
+  "license": "MIT",
+  "dependencies": {
+    "debug": "^4.1.1"
+  }
+}
