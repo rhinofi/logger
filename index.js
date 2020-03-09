@@ -60,11 +60,32 @@ makeLazyLogger = (strictLogger) => {
     () => {}
 }
 
-makeStrictLogger = (label, {logToStderr}) => {
+makeStrictLogger = (label, {logToStderr, isErrorLogger}) => {
   const logger = debug(label)
   if (!logToStderr && !process.env.DEBUG_LOG_TO_STDERR) {
     // by default log to stdout
     logger.log = console.log.bind(console);
+  }
+
+  if (isErrorLogger) {
+    return (...args) => {
+      if (!logger.enabled) return
+
+      const last = args[ args.length - 1 ]
+
+      if (last instanceof Error) {
+        const argsWithErrorMessage = args.slice(0, -1)
+        argsWithErrorMessage.push(last.toString())
+        // Log error.message via the logger with label.
+        logger.apply(logger, argsWithErrorMessage)
+        // Log error object on its own, so that it can be parsed by GCP Error
+        // reporting.
+        console.error(last)
+      }
+      else {
+        logger(args)
+      }
+    }
   }
   return logger
 }
@@ -78,9 +99,14 @@ module.exports = function (filename, options = {}) {
 
   const relativeFilePath = filename.replace(new RegExp(`^${root}/`), '');
 
+  const errorOptinos = Object.assign(options, {
+    logToStderr: true,
+    isErrorLogger: true
+  })
+
   const loggers = {
     log: makeStrictLogger(`${prefix}:LOG:${relativeFilePath}`, options),
-    error: makeStrictLogger(`${prefix}:ERROR:${relativeFilePath}`, options),
+    error: makeStrictLogger(`${prefix}:ERROR:${relativeFilePath}`, errorOptinos),
     debug: makeStrictLogger(`${prefix}:DEBUG:${relativeFilePath}`, options),
     warn: makeStrictLogger(`${prefix}:WARN:${relativeFilePath}`, options)
   }
