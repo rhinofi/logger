@@ -68,7 +68,7 @@ makeStrictLogger = (label, {logToStderr, isErrorLogger}) => {
   }
 
   if (isErrorLogger) {
-    return (...args) => {
+    const errorLogger = (...args) => {
       if (!logger.enabled) return
 
       const last = args[ args.length - 1 ]
@@ -86,7 +86,12 @@ makeStrictLogger = (label, {logToStderr, isErrorLogger}) => {
         logger(args)
       }
     }
+
+    errorLogger.enabled = logger.enabled
+    return errorLogger
   }
+
+
   return logger
 }
 
@@ -99,14 +104,14 @@ module.exports = function (filename, options = {}) {
 
   const relativeFilePath = filename.replace(new RegExp(`^${root}/`), '');
 
-  const errorOptinos = Object.assign(options, {
+  const errorOptions = Object.assign({}, options, {
     logToStderr: true,
     isErrorLogger: true
   })
 
   const loggers = {
     log: makeStrictLogger(`${prefix}:LOG:${relativeFilePath}`, options),
-    error: makeStrictLogger(`${prefix}:ERROR:${relativeFilePath}`, errorOptinos),
+    error: makeStrictLogger(`${prefix}:ERROR:${relativeFilePath}`, errorOptions),
     debug: makeStrictLogger(`${prefix}:DEBUG:${relativeFilePath}`, options),
     warn: makeStrictLogger(`${prefix}:WARN:${relativeFilePath}`, options)
   }
