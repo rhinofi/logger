@@ -110,10 +110,11 @@ module.exports = function (filename, options = {}) {
   })
 
   const loggers = {
-    log: makeStrictLogger(`${prefix}:LOG:${relativeFilePath}`, options),
-    error: makeStrictLogger(`${prefix}:ERROR:${relativeFilePath}`, errorOptions),
     debug: makeStrictLogger(`${prefix}:DEBUG:${relativeFilePath}`, options),
-    warn: makeStrictLogger(`${prefix}:WARN:${relativeFilePath}`, options)
+    log: makeStrictLogger(`${prefix}:LOG:${relativeFilePath}`, options),
+    warn: makeStrictLogger(`${prefix}:WARN:${relativeFilePath}`, options),
+    error: makeStrictLogger(`${prefix}:ERROR:${relativeFilePath}`, errorOptions),
+    emergency: makeStrictLogger(`${prefix}:EMERGENCY:${relativeFilePath}`, errorOptions),
   }
 
   // Decorates each logger with .lazy prop, which contains the lazy version
