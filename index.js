@@ -65,6 +65,7 @@ const parseArgs = (args) => args
     arg instanceof Error ? {
       name: arg.name,
       message: arg.message,
+      data: arg.data,
       stack: arg.stack
     } : arg)
   ).join(' ')
