@@ -41,7 +41,6 @@ enabled. This way we can avoid paying for pre-processing if the value would not
 have been logged anyway.
 */
 
-const debug = require('debug')
 const stringify = require('safe-json-stringify')
 
 // This is the directory from which node process was launched.
@@ -70,51 +69,29 @@ const parseArgs = (args) => args
     } : arg)
   ).join(' ')
 
-const makeStrictLogger = (label, {logToStderr, isErrorLogger}) => {
-  const logger = debug(label)
-  if (!logToStderr && !process.env.DEBUG_LOG_TO_STDERR) {
-    // by default log to stdout
-    logger.log = console.log.bind(console);
+const makeStrictLogger = (severity, context) => {
+  const logger = (...args) => {
+    const message = parseArgs(args)
+    const payload = { severity, timestamp: Date.now(), context, message }
+    console.log(stringify(payload))
   }
 
-  if (!logger.enabled) return
-
-  const [_, severity, context] = label.split(':')
-
-  const dvfLogger = isErrorLogger ? (...args) => {
-    const message = parseArgs(args)
-    const payload = { severity,timestamp: Date.now(),context,message }
-    logger(message)
-    console.error(stringify(payload))
-  } : (...args) => {
-    const message = parseArgs(args)
-    logger(message)
-  }
-
-
-  return dvfLogger
+  return logger
 }
 
 module.exports = function (filename, options = {}) {
   const {
-    prefix = 'dvf',
     root = cwd,
-    logToStderr = false
   } = options
 
   const relativeFilePath = filename.replace(new RegExp(`^${root}/`), '');
 
-  const errorOptions = Object.assign({}, options, {
-    logToStderr: true,
-    isErrorLogger: true
-  })
-
   const loggers = {
-    debug: makeStrictLogger(`${prefix}:DEBUG:${relativeFilePath}`, options),
-    log: makeStrictLogger(`${prefix}:LOG:${relativeFilePath}`, options),
-    warn: makeStrictLogger(`${prefix}:WARN:${relativeFilePath}`, options),
-    error: makeStrictLogger(`${prefix}:ERROR:${relativeFilePath}`, errorOptions),
-    emergency: makeStrictLogger(`${prefix}:EMERGENCY:${relativeFilePath}`, errorOptions),
+    debug: makeStrictLogger('DEBUG', relativeFilePath),
+    log: makeStrictLogger('LOG', relativeFilePath),
+    warn: makeStrictLogger('WARN', relativeFilePath),
+    error: makeStrictLogger('ERROR', relativeFilePath),
+    emergency: makeStrictLogger('EMERGENCY', relativeFilePath),
   }
 
   // Decorates each logger with .lazy prop, which contains the lazy version
