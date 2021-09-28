@@ -42,17 +42,18 @@ have been logged anyway.
 */
 
 const debug = require('debug')
+const stringify = require('safe-json-stringify')
 
 // This is the directory from which node process was launched.
 // We use it as root since it gives relative paths which can be clicked on
 // (in terminals such as iTerm) to open the file in an editor.
 const cwd = process.cwd()
 
-expandThunks = (array) => array.map(
+const expandThunks = (array) => array.map(
   elem => typeof elem == 'function' ? elem() : elem
 )
 
-makeLazyLogger = (strictLogger) => {
+const makeLazyLogger = (strictLogger) => {
   return strictLogger.enabled ?
     // if logger enabled, call it with functions expanded to actual values
     (...args) => strictLogger.apply(strictLogger, expandThunks(args)) :
@@ -60,39 +61,38 @@ makeLazyLogger = (strictLogger) => {
     () => {}
 }
 
-makeStrictLogger = (label, {logToStderr, isErrorLogger}) => {
+const parseArgs = (args) => args
+  .map(arg => stringify(
+    arg instanceof Error ? {
+      name: arg.name,
+      message: arg.message,
+      stack: arg.stack
+    } : arg)
+  ).join(' ')
+
+const makeStrictLogger = (label, {logToStderr, isErrorLogger}) => {
   const logger = debug(label)
   if (!logToStderr && !process.env.DEBUG_LOG_TO_STDERR) {
     // by default log to stdout
     logger.log = console.log.bind(console);
   }
 
-  if (isErrorLogger) {
-    const errorLogger = (...args) => {
-      if (!logger.enabled) return
+  if (!logger.enabled) return
 
-      const last = args[ args.length - 1 ]
+  const [_, severity, context] = label.split(':')
 
-      if (last instanceof Error) {
-        const argsWithErrorMessage = args.slice(0, -1)
-        argsWithErrorMessage.push(last.toString())
-        // Log error.message via the logger with label.
-        logger.apply(logger, argsWithErrorMessage)
-        // Log error object on its own, so that it can be parsed by GCP Error
-        // reporting.
-        console.error(last)
-      }
-      else {
-        logger(args)
-      }
-    }
-
-    errorLogger.enabled = logger.enabled
-    return errorLogger
+  const dvfLogger = isErrorLogger ? (...args) => {
+    const message = parseArgs(args)
+    const payload = { severity,timestamp: Date.now(),context,message }
+    logger(message)
+    console.error(stringify(payload))
+  } : (...args) => {
+    const message = parseArgs(args)
+    logger(message)
   }
 
 
-  return logger
+  return dvfLogger
 }
 
 module.exports = function (filename, options = {}) {
