@@ -106,8 +106,6 @@ module.exports = function (filename, options = { root }) {
     logToStderr = false
   } = options
 
-  console.log('root', root)
-
   const relativeFilePath = filename.replace(new RegExp(`^${root}`), '');
 
   const errorOptions = Object.assign({}, options, {
