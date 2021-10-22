@@ -43,10 +43,14 @@ have been logged anyway.
 
 const stringify = require('safe-json-stringify')
 
-// This is the directory from which node process was launched.
-// We use it as root since it gives relative paths which can be clicked on
-// (in terminals such as iTerm) to open the file in an editor.
-const cwd = process.cwd()
+// This is a string, or a regex, which will be matched against the __filename.
+// Whatever it matches will be removed.
+const root =
+  process.env.DVF_LOGGER_ROOT ||
+  // This is the directory from which node process was launched.
+  // We use it as default root since it gives relative paths which can be
+  // clicked on (in terminals such as iTerm) to open the file in an editor.
+  `${process.cwd()}/`
 
 const expandThunks = (array) => array.map(
   elem => typeof elem == 'function' ? elem() : elem
@@ -80,12 +84,10 @@ const makeStrictLogger = (severity, context) => {
   return logger
 }
 
-module.exports = function (filename, options = {}) {
-  const {
-    root = cwd,
-  } = options
+module.exports = function (filename, options = { root }) {
+  const { root } = options
 
-  const relativeFilePath = filename.replace(new RegExp(`^${root}/`), '');
+  const relativeFilePath = filename.replace(new RegExp(`^${root}`), '');
 
   const loggers = {
     debug: makeStrictLogger('DEBUG', relativeFilePath),
