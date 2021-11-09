@@ -52,6 +52,8 @@ const root =
   // clicked on (in terminals such as iTerm) to open the file in an editor.
   `${process.cwd()}/`
 
+const PRETTY = Boolean(process.env.PRETTY)
+
 const DEBUG = process.env.DEBUG
 
 const LEVELS = ['DEBUG', 'LOG', 'WARN', 'ERROR', 'EMERGENCY']
@@ -90,7 +92,9 @@ const makeStrictLogger = (severity, context) => {
       DEBUG === '*' ||
       (LEVELS.includes(DEBUG) && DEBUG === severity)
     ) {
-      console.log(stringify(payload))
+      const log_args = [payload]
+      if (PRETTY) log_args.push(null, 2)
+      console.log(stringify(...log_args))
     }
   }
 
