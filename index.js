@@ -52,33 +52,46 @@ const root =
   // clicked on (in terminals such as iTerm) to open the file in an editor.
   `${process.cwd()}/`
 
-const expandThunks = (array) => array.map(
-  elem => typeof elem == 'function' ? elem() : elem
-)
+const DEBUG = process.env.DEBUG
 
-const makeLazyLogger = (strictLogger) => {
-  return strictLogger.enabled ?
-    // if logger enabled, call it with functions expanded to actual values
-    (...args) => strictLogger.apply(strictLogger, expandThunks(args)) :
-    // no-op
-    () => {}
+const LEVELS = ['DEBUG', 'LOG', 'WARN', 'ERROR', 'EMERGENCY']
+
+const expandThunks = array => array.map(elem => (typeof elem == 'function' ? elem() : elem))
+
+const makeLazyLogger = strictLogger => {
+  // call it with functions expanded to actual values
+  return (...args) => strictLogger.apply(strictLogger, expandThunks(args))
 }
 
-const parseArgs = (args) => args
-  .map(arg => stringify(
-    arg instanceof Error ? {
-      name: arg.name,
-      message: arg.message,
-      data: arg.data,
-      stack: arg.stack
-    } : arg)
-  ).join(' ')
+const parseArgs = args =>
+  args
+    .map(arg =>
+      stringify(
+        arg instanceof Error
+          ? {
+              name: arg.name,
+              message: arg.message,
+              data: arg.data,
+              stack: arg.stack
+            }
+          : arg
+      )
+    )
+    .join(' ')
 
 const makeStrictLogger = (severity, context) => {
   const logger = (...args) => {
     const message = parseArgs(args)
     const payload = { severity, timestamp: Date.now(), context, message }
-    console.log(stringify(payload))
+
+    if (
+      (!DEBUG && severity !== 'DEBUG') ||
+      (DEBUG && !LEVELS.includes(DEBUG) && severity !== 'DEBUG') ||
+      DEBUG === '*' ||
+      (LEVELS.includes(DEBUG) && DEBUG === severity)
+    ) {
+      console.log(stringify(payload))
+    }
   }
 
   return logger
@@ -87,20 +100,21 @@ const makeStrictLogger = (severity, context) => {
 module.exports = function (filename, options = { root }) {
   const { root } = options
 
-  const relativeFilePath = filename.replace(new RegExp(`^${root}`), '');
+  const relativeFilePath = filename.replace(new RegExp(`^${root}`), '')
 
   const loggers = {
-    debug: makeStrictLogger('DEBUG', relativeFilePath),
-    log: makeStrictLogger('LOG', relativeFilePath),
-    warn: makeStrictLogger('WARN', relativeFilePath),
-    error: makeStrictLogger('ERROR', relativeFilePath),
-    emergency: makeStrictLogger('EMERGENCY', relativeFilePath),
+    debug: makeStrictLogger(LEVELS[0], relativeFilePath),
+    log: makeStrictLogger(LEVELS[1], relativeFilePath),
+    warn: makeStrictLogger(LEVELS[2], relativeFilePath),
+    error: makeStrictLogger(LEVELS[3], relativeFilePath),
+    emergency: makeStrictLogger(LEVELS[4], relativeFilePath)
   }
 
   // Decorates each logger with .lazy prop, which contains the lazy version
   // of the logger.
-  Object.values(loggers)
-  .forEach( logger => { logger.lazy = makeLazyLogger(logger) })
+  Object.values(loggers).forEach(logger => {
+    logger.lazy = makeLazyLogger(logger)
+  })
 
   return loggers
 }
