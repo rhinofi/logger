@@ -65,21 +65,22 @@ const makeLazyLogger = strictLogger => {
   return (...args) => strictLogger.apply(strictLogger, expandThunks(args))
 }
 
-const parseArgs = args =>
-  args
-    .map(arg =>
-      stringify(
-        arg instanceof Error
-          ? {
-              name: arg.name,
-              message: arg.message,
-              data: arg.data,
-              stack: arg.stack
-            }
-          : arg
-      )
-    )
-    .join(' ')
+const parseArgs = args => {
+  const parsed = args.map(arg => {
+    const argument =
+      arg instanceof Error
+        ? {
+            name: arg.name,
+            message: arg.message,
+            data: arg.data,
+            stack: arg.stack
+          }
+        : arg
+    return PRETTY ? argument : stringify(argument)
+  })
+
+  return PRETTY ? parsed : parsed.join(' ')
+}
 
 const makeStrictLogger = (severity, context) => {
   const logger = (...args) => {
@@ -92,9 +93,14 @@ const makeStrictLogger = (severity, context) => {
       DEBUG === '*' ||
       (LEVELS.includes(DEBUG) && DEBUG === severity)
     ) {
-      const log_args = [payload]
-      if (PRETTY) log_args.push(null, 2)
-      console.log(stringify(...log_args))
+      if (PRETTY) {
+        const format = `${new Date(payload.timestamp).toISOString()} | ${payload.context} | ${
+          payload.severity
+        } |`
+        console.log(format, payload.message)
+      } else {
+        console.log(payload)
+      }
     }
   }
 
