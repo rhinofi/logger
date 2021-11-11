@@ -99,7 +99,7 @@ const makeStrictLogger = (severity, context) => {
         } |`
         console.log(format, payload.message)
       } else {
-        console.log(payload)
+        console.log(stringify(payload))
       }
     }
   }
