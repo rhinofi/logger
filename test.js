@@ -1,12 +1,14 @@
 const makeLogger = require('./index')
 
-const lgr = makeLogger(__filename)
+const logger = makeLogger(__filename)
 
-lgr.debug('Debug message', { field1: 'stuff' })
-lgr.log('some information here', [{ field1: 'stuff' }, { field1: 'more stuff' }])
-lgr.warn('warning, attention', new Error('what?'))
-lgr.error('error, not good', new Error('some pretty looking stack trace'))
-lgr.emergency(
+console.log({ logger })
+
+logger.debug('Debug message', { field1: 'stuff' })
+logger.log('some information here', [{ field1: 'stuff' }, { field1: 'more stuff' }])
+logger.warn('warning, attention', new Error('what?'))
+logger.error('error, not good', new Error('some pretty looking stack trace'))
+logger.emergency(
   'uh oh, its an emergency',
   [{ fillAmount: -420, fee: 23 * 10 ** 9 }, new Error('some pretty looking stack trace')],
   new Error('FUNDS_ARE_SAFU')

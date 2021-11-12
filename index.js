@@ -58,11 +58,16 @@ const DEBUG = process.env.DEBUG
 
 const LEVELS = ['DEBUG', 'LOG', 'WARN', 'ERROR', 'EMERGENCY']
 
+const levelsHasDebug = LEVELS.includes(DEBUG)
+
 const expandThunks = array => array.map(elem => (typeof elem == 'function' ? elem() : elem))
 
 const makeLazyLogger = strictLogger => {
-  // call it with functions expanded to actual values
-  return (...args) => strictLogger.apply(strictLogger, expandThunks(args))
+  return strictLogger.enabled
+    // call it with functions expanded to actual values
+    ? (...args) => strictLogger.apply(strictLogger, expandThunks(args))
+    // no-op
+    : () => {}
 }
 
 const parseArgs = args => {
@@ -83,26 +88,26 @@ const parseArgs = args => {
 }
 
 const makeStrictLogger = (severity, context) => {
+  const shouldLog = (!DEBUG && severity !== 'DEBUG') ||
+      (DEBUG && !levelsHasDebug && severity !== 'DEBUG') ||
+      DEBUG === '*' ||
+      (levelsHasDebug && DEBUG === severity)
+
   const logger = (...args) => {
+    if (!logger.enabled) return
+
     const message = parseArgs(args)
     const payload = { severity, timestamp: Date.now(), context, message }
 
-    if (
-      (!DEBUG && severity !== 'DEBUG') ||
-      (DEBUG && !LEVELS.includes(DEBUG) && severity !== 'DEBUG') ||
-      DEBUG === '*' ||
-      (LEVELS.includes(DEBUG) && DEBUG === severity)
-    ) {
-      if (PRETTY) {
-        const format = `${new Date(payload.timestamp).toISOString()} | ${payload.context} | ${
-          payload.severity
-        } |`
-        console.log(format, payload.message)
-      } else {
-        console.log(stringify(payload))
-      }
+    if (PRETTY) {
+      const format = `${new Date(payload.timestamp).toISOString()} | ${payload.severity} | ${payload.context} |`
+      console.log(format, payload.message)
+    } else {
+      console.log(stringify(payload))
     }
   }
+
+  logger.enabled = shouldLog && process.env.NODE_ENV !== 'test'
 
   return logger
 }
