@@ -41,6 +41,7 @@ enabled. This way we can avoid paying for pre-processing if the value would not
 have been logged anyway.
 */
 
+const debug = require('debug')
 const stringify = require('safe-json-stringify')
 
 // This is a string, or a regex, which will be matched against the __filename.
@@ -88,10 +89,7 @@ const parseArgs = args => {
 }
 
 const makeStrictLogger = (severity, context) => {
-  const shouldLog = (!DEBUG && severity !== 'DEBUG') ||
-      (DEBUG && !levelsHasDebug && severity !== 'DEBUG') ||
-      DEBUG === '*' ||
-      (levelsHasDebug && DEBUG === severity)
+  const debugLogger = debug(`dvf:${severity}:${context}`)
 
   const logger = (...args) => {
     if (!logger.enabled) return
@@ -107,7 +105,7 @@ const makeStrictLogger = (severity, context) => {
     }
   }
 
-  logger.enabled = shouldLog && process.env.NODE_ENV !== 'test'
+  logger.enabled = debugLogger.enabled || false
 
   return logger
 }
