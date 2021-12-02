@@ -59,33 +59,53 @@ const DEBUG = process.env.DEBUG
 
 const LEVELS = ['DEBUG', 'LOG', 'WARN', 'ERROR', 'EMERGENCY']
 
+const simpleTypes = [
+  'bigint',
+  'boolean',
+  'number',
+  'string',
+  'symbol',
+  'undefined'
+]
+
 const levelsHasDebug = LEVELS.includes(DEBUG)
 
-const expandThunks = array => array.map(elem => (typeof elem == 'function' ? elem() : elem))
+const expandThunks = (array) =>
+  array.map((elem) => (typeof elem == 'function' ? elem() : elem))
 
-const makeLazyLogger = strictLogger => {
+const makeLazyLogger = (strictLogger) => {
   return strictLogger.enabled
-    // call it with functions expanded to actual values
-    ? (...args) => strictLogger.apply(strictLogger, expandThunks(args))
-    // no-op
-    : () => {}
+    ? // call it with functions expanded to actual values
+      (...args) => strictLogger.apply(strictLogger, expandThunks(args))
+    : // no-op
+      () => {}
 }
 
-const parseArgs = args => {
-  const parsed = args.map(arg => {
-    const argument =
-      arg instanceof Error
-        ? {
-            name: arg.name,
-            message: arg.message,
-            data: arg.data,
-            stack: arg.stack
+const parseArgs = (args, extraTypesForMessage) => {
+  let message = ''
+  const data = args
+    .map((arg) => {
+      if (simpleTypes.includes(typeof arg)) {
+        message += arg
+      } else if (arg instanceof Error) {
+        return {
+          name: arg.name,
+          message: arg.message,
+          data: arg.data,
+          stack: arg.stack
+        }
+      } else if (extraTypesForMessage && extraTypesForMessage.length) {
+        for (const extraType of extraTypesForMessage) {
+          if (arg instanceof extraType) {
+            message += arg
+            break
           }
-        : arg
-    return PRETTY ? argument : stringify(argument)
-  })
+        }
+      } else return arg
+    })
+    .filter(Boolean)
 
-  return PRETTY ? parsed : parsed.join(' ')
+  return { message, data }
 }
 
 const makeStrictLogger = (severity, context) => {
@@ -94,12 +114,14 @@ const makeStrictLogger = (severity, context) => {
   const logger = (...args) => {
     if (!logger.enabled) return
 
-    const message = parseArgs(args)
-    const payload = { severity, timestamp: Date.now(), context, message }
+    const { message, data } = parseArgs(args, logger.extraTypesForMessage)
+    const payload = { severity, timestamp: Date.now(), context, message, data }
 
     if (PRETTY) {
-      const format = `${new Date(payload.timestamp).toISOString()} | ${payload.severity} | ${payload.context} |`
-      console.log(format, payload.message)
+      const format = `${new Date(payload.timestamp).toISOString()} | ${
+        payload.severity
+      } | ${payload.context} |`
+      console.log(format, payload.message, payload.data)
     } else {
       console.log(stringify(payload))
     }
@@ -125,7 +147,7 @@ module.exports = function (filename, options = { root }) {
 
   // Decorates each logger with .lazy prop, which contains the lazy version
   // of the logger.
-  Object.values(loggers).forEach(logger => {
+  Object.values(loggers).forEach((logger) => {
     logger.lazy = makeLazyLogger(logger)
   })
 
