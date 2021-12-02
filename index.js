@@ -86,7 +86,7 @@ const parseArgs = (args, extraTypesForMessage) => {
   const data = args
     .map((arg) => {
       if (simpleTypes.includes(typeof arg)) {
-        message += arg
+        message += stringify(arg)
       } else if (arg instanceof Error) {
         return {
           name: arg.name,
@@ -97,7 +97,7 @@ const parseArgs = (args, extraTypesForMessage) => {
       } else if (extraTypesForMessage && extraTypesForMessage.length) {
         for (const extraType of extraTypesForMessage) {
           if (arg instanceof extraType) {
-            message += arg
+            message += stringify(arg)
             break
           }
         }
