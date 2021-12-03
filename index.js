@@ -54,7 +54,7 @@ const root =
   `${process.cwd()}/`
 
 const PRETTY = Boolean(process.env.PRETTY)
-
+const DEPTH = proccess.env.DEPTH
 const DEBUG = process.env.DEBUG
 
 const LEVELS = ['DEBUG', 'LOG', 'WARN', 'ERROR', 'EMERGENCY']
@@ -86,7 +86,7 @@ const parseArgs = (args, extraTypesForMessage) => {
   const data = args
     .map((arg) => {
       if (simpleTypes.includes(typeof arg)) {
-        message += ` ${stringify(arg)}`
+        message += ` ${stringify(arg, DEPTH)}`
       } else if (arg instanceof Error) {
         return {
           name: arg.name,
@@ -98,7 +98,7 @@ const parseArgs = (args, extraTypesForMessage) => {
         if (extraTypesForMessage && extraTypesForMessage.length) {
           for (const extraType of extraTypesForMessage) {
             if (arg instanceof extraType) {
-              message += ` ${stringify(arg)}`
+              message += ` ${stringify(arg, DEPTH)}`
             }
           }
 
@@ -126,7 +126,7 @@ const makeStrictLogger = (severity, context, extraTypesForMessage) => {
       } | ${payload.context} |`
       console.log(format, payload.message, payload.data)
     } else {
-      console.log(stringify(payload))
+      console.log(stringify(payload, DEPTH))
     }
   }
 
