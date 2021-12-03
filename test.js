@@ -16,9 +16,24 @@ logger.emergency(
   new Date(),
   true,
   421,
-  [
-    { fillAmount: -420, fee: 23 * 10 ** 9 },
-    new Error('some pretty looking stack trace')
-  ],
-  new Error('FUNDS_ARE_SAFU')
+  [{ fillAmount: -420, fee: 23 * 10 ** 9 }, 4512, true],
+  new Error('FUNDS_ARE_SAFU'),
+  {
+    level1: {
+      level2: {
+        level3: {
+          level4: 'deep',
+          syke: {
+            level5: {
+              level6: {
+                level7: {
+                  level8: 'level9999'
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 )

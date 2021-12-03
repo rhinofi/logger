@@ -42,7 +42,7 @@ have been logged anyway.
 */
 
 const debug = require('debug')
-const stringify = require('safe-json-stringify')
+const { stringify } = require('./stringify')
 
 // This is a string, or a regex, which will be matched against the __filename.
 // Whatever it matches will be removed.
@@ -94,14 +94,17 @@ const parseArgs = (args, extraTypesForMessage) => {
           data: arg.data,
           stack: arg.stack
         }
-      } else if (extraTypesForMessage && extraTypesForMessage.length) {
-        for (const extraType of extraTypesForMessage) {
-          if (arg instanceof extraType) {
-            message += ` ${stringify(arg)}`
-            break
+      } else if (typeof arg == 'object') {
+        if (extraTypesForMessage && extraTypesForMessage.length) {
+          for (const extraType of extraTypesForMessage) {
+            if (arg instanceof extraType) {
+              message += ` ${stringify(arg)}`
+            }
           }
-        }
-      } else return arg
+
+          return arg
+        } else return arg
+      }
     })
     .filter(Boolean)
 
@@ -132,7 +135,10 @@ const makeStrictLogger = (severity, context, extraTypesForMessage) => {
   return logger
 }
 
-module.exports = function (filename, options = { root, extraTypesForMessage: [] }) {
+module.exports = function (
+  filename,
+  options = { root, extraTypesForMessage: [] }
+) {
   const { root, extraTypesForMessage } = options
 
   const relativeFilePath = filename.replace(new RegExp(`^${root}`), '')
@@ -142,7 +148,11 @@ module.exports = function (filename, options = { root, extraTypesForMessage: [] 
     log: makeStrictLogger(LEVELS[1], relativeFilePath, extraTypesForMessage),
     warn: makeStrictLogger(LEVELS[2], relativeFilePath, extraTypesForMessage),
     error: makeStrictLogger(LEVELS[3], relativeFilePath, extraTypesForMessage),
-    emergency: makeStrictLogger(LEVELS[4], relativeFilePath, extraTypesForMessage)
+    emergency: makeStrictLogger(
+      LEVELS[4],
+      relativeFilePath,
+      extraTypesForMessage
+    )
   }
 
   // Decorates each logger with .lazy prop, which contains the lazy version
