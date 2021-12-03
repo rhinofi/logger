@@ -137,8 +137,6 @@ module.exports = function (filename, options = { root, extraTypesForMessage: [] 
 
   const relativeFilePath = filename.replace(new RegExp(`^${root}`), '')
 
-  console.log({this: extraTypesForMessage})
-
   const loggers = {
     debug: makeStrictLogger(LEVELS[0], relativeFilePath, extraTypesForMessage),
     log: makeStrictLogger(LEVELS[1], relativeFilePath, extraTypesForMessage),
