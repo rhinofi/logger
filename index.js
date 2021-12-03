@@ -54,7 +54,7 @@ const root =
   `${process.cwd()}/`
 
 const PRETTY = Boolean(process.env.PRETTY)
-const DEPTH = proccess.env.DEPTH
+const DEPTH = process.env.DEPTH
 const DEBUG = process.env.DEBUG
 
 const LEVELS = ['DEBUG', 'LOG', 'WARN', 'ERROR', 'EMERGENCY']
