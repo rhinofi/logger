@@ -86,7 +86,7 @@ const parseArgs = (args, extraTypesForMessage) => {
   const data = args
     .map((arg) => {
       if (simpleTypes.includes(typeof arg)) {
-        message += stringify(arg)
+        message += ` ${stringify(arg)}`
       } else if (arg instanceof Error) {
         return {
           name: arg.name,
@@ -97,7 +97,7 @@ const parseArgs = (args, extraTypesForMessage) => {
       } else if (extraTypesForMessage && extraTypesForMessage.length) {
         for (const extraType of extraTypesForMessage) {
           if (arg instanceof extraType) {
-            message += stringify(arg)
+            message += ` ${stringify(arg)}`
             break
           }
         }
@@ -108,13 +108,13 @@ const parseArgs = (args, extraTypesForMessage) => {
   return { message, data }
 }
 
-const makeStrictLogger = (severity, context) => {
+const makeStrictLogger = (severity, context, extraTypesForMessage) => {
   const debugLogger = debug(`dvf:${severity}:${context}`)
 
   const logger = (...args) => {
     if (!logger.enabled) return
 
-    const { message, data } = parseArgs(args, logger.extraTypesForMessage)
+    const { message, data } = parseArgs(args, extraTypesForMessage)
     const payload = { severity, timestamp: Date.now(), context, message, data }
 
     if (PRETTY) {
@@ -132,17 +132,19 @@ const makeStrictLogger = (severity, context) => {
   return logger
 }
 
-module.exports = function (filename, options = { root }) {
-  const { root } = options
+module.exports = function (filename, options = { root, extraTypesForMessage: [] }) {
+  const { root, extraTypesForMessage } = options
 
   const relativeFilePath = filename.replace(new RegExp(`^${root}`), '')
 
+  console.log({this: extraTypesForMessage})
+
   const loggers = {
-    debug: makeStrictLogger(LEVELS[0], relativeFilePath),
-    log: makeStrictLogger(LEVELS[1], relativeFilePath),
-    warn: makeStrictLogger(LEVELS[2], relativeFilePath),
-    error: makeStrictLogger(LEVELS[3], relativeFilePath),
-    emergency: makeStrictLogger(LEVELS[4], relativeFilePath)
+    debug: makeStrictLogger(LEVELS[0], relativeFilePath, extraTypesForMessage),
+    log: makeStrictLogger(LEVELS[1], relativeFilePath, extraTypesForMessage),
+    warn: makeStrictLogger(LEVELS[2], relativeFilePath, extraTypesForMessage),
+    error: makeStrictLogger(LEVELS[3], relativeFilePath, extraTypesForMessage),
+    emergency: makeStrictLogger(LEVELS[4], relativeFilePath, extraTypesForMessage)
   }
 
   // Decorates each logger with .lazy prop, which contains the lazy version
