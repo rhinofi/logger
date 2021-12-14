@@ -42,6 +42,7 @@ have been logged anyway.
 */
 
 const debug = require('debug')
+const { stringify } = require('./stringify')
 
 // This is a string, or a regex, which will be matched against the __filename.
 // Whatever it matches will be removed.
@@ -52,79 +53,113 @@ const root =
   // clicked on (in terminals such as iTerm) to open the file in an editor.
   `${process.cwd()}/`
 
-expandThunks = (array) => array.map(
-  elem => typeof elem == 'function' ? elem() : elem
-)
+const PRETTY = Boolean(process.env.PRETTY)
+const DEPTH = process.env.DEPTH
+const DEBUG = process.env.DEBUG
 
-makeLazyLogger = (strictLogger) => {
-  return strictLogger.enabled ?
-    // if logger enabled, call it with functions expanded to actual values
-    (...args) => strictLogger.apply(strictLogger, expandThunks(args)) :
-    // no-op
-    () => {}
+const LEVELS = ['DEBUG', 'LOG', 'WARN', 'ERROR', 'EMERGENCY']
+
+const simpleTypes = [
+  'bigint',
+  'boolean',
+  'number',
+  'string',
+  'symbol',
+  'undefined'
+]
+
+const levelsHasDebug = LEVELS.includes(DEBUG)
+
+const expandThunks = (array) =>
+  array.map((elem) => (typeof elem == 'function' ? elem() : elem))
+
+const makeLazyLogger = (strictLogger) => {
+  return strictLogger.enabled
+    ? // call it with functions expanded to actual values
+      (...args) => strictLogger.apply(strictLogger, expandThunks(args))
+    : // no-op
+      () => {}
 }
 
-makeStrictLogger = (label, {logToStderr, isErrorLogger}) => {
-  const logger = debug(label)
-  if (!logToStderr && !process.env.DEBUG_LOG_TO_STDERR) {
-    // by default log to stdout
-    logger.log = console.log.bind(console);
-  }
+const parseArgs = (args, extraTypesForMessage) => {
+  let message = ''
+  const data = args
+    .map((arg) => {
+      if (simpleTypes.includes(typeof arg)) {
+        message += ` ${stringify(arg, DEPTH)}`
+      } else if (arg instanceof Error) {
+        return {
+          name: arg.name,
+          message: arg.message,
+          data: arg.data,
+          stack: arg.stack
+        }
+      } else if (typeof arg == 'object') {
+        if (extraTypesForMessage && extraTypesForMessage.length) {
+          for (const extraType of extraTypesForMessage) {
+            if (arg instanceof extraType) {
+              message += ` ${stringify(arg, DEPTH)}`
+            }
+          }
 
-  if (isErrorLogger) {
-    const errorLogger = (...args) => {
-      if (!logger.enabled) return
-
-      const last = args[ args.length - 1 ]
-
-      if (last instanceof Error) {
-        const argsWithErrorMessage = args.slice(0, -1)
-        argsWithErrorMessage.push(last.toString())
-        // Log error.message via the logger with label.
-        logger.apply(logger, argsWithErrorMessage)
-        // Log error object on its own, so that it can be parsed by GCP Error
-        // reporting.
-        console.error(last)
+          return arg
+        } else return arg
       }
-      else {
-        logger(args)
-      }
+    })
+    .filter(Boolean)
+
+  return { message, data }
+}
+
+const makeStrictLogger = (severity, context, extraTypesForMessage) => {
+  const debugLogger = debug(`dvf:${severity}:${context}`)
+
+  const logger = (...args) => {
+    if (!logger.enabled) return
+
+    const { message, data } = parseArgs(args, extraTypesForMessage)
+    const payload = { severity, timestamp: Date.now(), context, message, data }
+
+    if (PRETTY) {
+      const format = `${new Date(payload.timestamp).toISOString()} | ${
+        payload.severity
+      } | ${payload.context} |`
+      console.log(format, payload.message, payload.data)
+    } else {
+      console.log(stringify(payload, DEPTH))
     }
-
-    errorLogger.enabled = logger.enabled
-    return errorLogger
   }
 
+  logger.enabled = debugLogger.enabled || false
 
   return logger
 }
 
-module.exports = function (filename, options = { root }) {
-  const {
-    prefix = 'dvf',
-    root,
-    logToStderr = false
-  } = options
+module.exports = function (
+  filename,
+  options = { root, extraTypesForMessage: [] }
+) {
+  const { root, extraTypesForMessage } = options
 
-  const relativeFilePath = filename.replace(new RegExp(`^${root}`), '');
-
-  const errorOptions = Object.assign({}, options, {
-    logToStderr: true,
-    isErrorLogger: true
-  })
+  const relativeFilePath = filename.replace(new RegExp(`^${root}`), '')
 
   const loggers = {
-    debug: makeStrictLogger(`${prefix}:DEBUG:${relativeFilePath}`, options),
-    log: makeStrictLogger(`${prefix}:LOG:${relativeFilePath}`, options),
-    warn: makeStrictLogger(`${prefix}:WARN:${relativeFilePath}`, options),
-    error: makeStrictLogger(`${prefix}:ERROR:${relativeFilePath}`, errorOptions),
-    emergency: makeStrictLogger(`${prefix}:EMERGENCY:${relativeFilePath}`, errorOptions),
+    debug: makeStrictLogger(LEVELS[0], relativeFilePath, extraTypesForMessage),
+    log: makeStrictLogger(LEVELS[1], relativeFilePath, extraTypesForMessage),
+    warn: makeStrictLogger(LEVELS[2], relativeFilePath, extraTypesForMessage),
+    error: makeStrictLogger(LEVELS[3], relativeFilePath, extraTypesForMessage),
+    emergency: makeStrictLogger(
+      LEVELS[4],
+      relativeFilePath,
+      extraTypesForMessage
+    )
   }
 
   // Decorates each logger with .lazy prop, which contains the lazy version
   // of the logger.
-  Object.values(loggers)
-  .forEach( logger => { logger.lazy = makeLazyLogger(logger) })
+  Object.values(loggers).forEach((logger) => {
+    logger.lazy = makeLazyLogger(logger)
+  })
 
   return loggers
 }
