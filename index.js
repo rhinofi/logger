@@ -88,6 +88,10 @@ const parseArgs = (args, extraTypesForMessage) => {
       if (simpleTypes.includes(typeof arg)) {
         message += `${stringifySimple(arg, DEPTH)}`
       } else if (arg instanceof Error) {
+        if (!message) {
+          message = arg.message
+        }
+
         return {
           name: arg.name,
           message: arg.message,

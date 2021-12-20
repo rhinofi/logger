@@ -4,6 +4,7 @@ const logger = makeLogger(__filename, { extraTypesForMessage: [Date] })
 
 console.log({ logger })
 
+logger.error(new Error('Only Error'))
 logger.debug('Debug message', { field1: 'stuff' }, true, new Date(), 123)
 logger.log('some information here', [
   { field1: 'stuff' },
