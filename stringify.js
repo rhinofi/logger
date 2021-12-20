@@ -1,3 +1,4 @@
+const escapeString = (str) => str && str.replace('\n', '')
 const stringify = (data, depth = 5) => {
   return data === undefined
     ? 'null'
@@ -21,4 +22,8 @@ const stringify = (data, depth = 5) => {
     : JSON.stringify(data)
 }
 
-module.exports = { stringify }
+const stringifySimple = (data) => typeof data === 'string'
+  ? escapeString(data)
+  : data
+
+module.exports = { stringify, stringifySimple }
