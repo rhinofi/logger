@@ -42,7 +42,7 @@ have been logged anyway.
 */
 
 const debug = require('debug')
-const { stringify } = require('./stringify')
+const { stringify, stringifySimple } = require('./stringify')
 
 // This is a string, or a regex, which will be matched against the __filename.
 // Whatever it matches will be removed.
@@ -86,8 +86,12 @@ const parseArgs = (args, extraTypesForMessage) => {
   const data = args
     .map((arg) => {
       if (simpleTypes.includes(typeof arg)) {
-        message += ` ${stringify(arg, DEPTH)}`
+        message += `${stringifySimple(arg, DEPTH)}`
       } else if (arg instanceof Error) {
+        if (!message) {
+          message = arg.message
+        }
+
         return {
           name: arg.name,
           message: arg.message,
