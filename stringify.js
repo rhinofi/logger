@@ -1,4 +1,4 @@
-const escapeString = (str) => str && str.replace('\n', '')
+const escapeString = (str) => str && str.replace(/[\n\r]/g, '')
 const stringify = (data, depth = 5) => {
   return data === undefined
     ? 'null'
