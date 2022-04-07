@@ -86,7 +86,7 @@ const parseArgs = (args, extraTypesForMessage) => {
   const data = args
     .map((arg) => {
       if (simpleTypes.includes(typeof arg)) {
-        message += `${stringifySimple(arg, DEPTH)}`
+        message += `${stringifySimple(arg)}`
       } else if (arg instanceof Error) {
         if (!message) {
           message = arg.message
@@ -115,14 +115,78 @@ const parseArgs = (args, extraTypesForMessage) => {
   return { message, data }
 }
 
+const formatData = (data) => {
+  if (simpleTypes.includes(typeof data)) 
+    return `${stringifySimple(data)}`
+
+  if (typeof data === 'object')
+    return data
+}
+
+const invalidInvocation = (args, extraTypesForMessage) => {
+  console.error(new Error('INVALID_LOG_INVOCATION'))
+  return parseArgs(args, extraTypesForMessage)
+}
+
+const parseArgsV2 = (args, extraTypesForMessage) => {
+  if (args.length == 1) {
+    if (typeof args[0] === 'string') {
+      return {
+        message: args[0]
+      }
+    } else {
+      return invalidInvocation(args, extraTypesForMessage)
+    }
+  } else if (args.length > 2) {
+    return invalidInvocation(args, extraTypesForMessage)
+  }
+
+  // Standard log format, [message, data]
+  const [message, data] = args
+
+  if (data instanceof Error) {
+    return {
+      message: `${message} | ${data.message}`,
+      error: {
+        name: data.name,
+        message: data.message,
+        data: data.data,
+        stack: data.stack
+      }
+    }
+  }
+
+  return {
+    message,
+    data: formatData(data, DEPTH)
+  }
+}
+
+/**
+ * 
+ * @param {string} severity 
+ * @param {string} context 
+ * @param {Object} extraTypesForMessage 
+ * @returns {(message: string, data?: Object | Error) => void}
+ */
 const makeStrictLogger = (severity, context, extraTypesForMessage) => {
   const debugLogger = debug(`dvf:${severity}:${context}`)
 
   const logger = (...args) => {
     if (!logger.enabled) return
 
-    const { message, data } = parseArgs(args, extraTypesForMessage)
-    const payload = { severity, timestamp: Date.now(), context, message, data }
+    const gcpProps = {
+      'logging.googleapis.com/sourceLocation': {
+        file: context
+      }
+    }
+
+    const { message, data, error } = parseArgsV2(args, extraTypesForMessage)
+    const payload = { severity, timestamp: Date.now(), context, message,
+       ...(data && { data }),
+       ...(error && { error }),
+       ...(!PRETTY && gcpProps)
+       }
 
     if (PRETTY) {
       const format = `${new Date(payload.timestamp).toISOString()} | ${
