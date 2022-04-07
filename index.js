@@ -86,7 +86,7 @@ const parseArgs = (args, extraTypesForMessage) => {
   const data = args
     .map((arg) => {
       if (simpleTypes.includes(typeof arg)) {
-        message += `${stringifySimple(arg, DEPTH)}`
+        message += `${stringifySimple(arg)}`
       } else if (arg instanceof Error) {
         if (!message) {
           message = arg.message
@@ -117,7 +117,7 @@ const parseArgs = (args, extraTypesForMessage) => {
 
 const formatData = (data) => {
   if (simpleTypes.includes(typeof data)) 
-    return `${stringifySimple(data, DEPTH)}`
+    return `${stringifySimple(data)}`
 
   if (typeof data == 'object')
     return data
