@@ -162,6 +162,13 @@ const parseArgsV2 = (args, extraTypesForMessage) => {
   }
 }
 
+/**
+ * 
+ * @param {string} severity 
+ * @param {string} context 
+ * @param {Object} extraTypesForMessage 
+ * @returns {(message: string, data?: Object | Error) => void}
+ */
 const makeStrictLogger = (severity, context, extraTypesForMessage) => {
   const debugLogger = debug(`dvf:${severity}:${context}`)
 
