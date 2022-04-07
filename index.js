@@ -123,9 +123,22 @@ const formatData = (data) => {
     return data
 }
 
+const invalidInvocation = (args, extraTypesForMessage) => {
+  console.error(new Error('INVALID_LOG_INVOCATION'))
+  return parseArgs(args, extraTypesForMessage)
+}
+
 const parseArgsV2 = (args, extraTypesForMessage) => {
-  if (args.length == 1 || args.length > 2) {
-    return parseArgs(args, extraTypesForMessage)
+  if (args.length == 1) {
+    if (typeof args[0] == 'string') {
+      return {
+        message: args[0]
+      }
+    } else {
+      return invalidInvocation(args, extraTypesForMessage)
+    }
+  } else if (args.length > 2) {
+    return invalidInvocation(args, extraTypesForMessage)
   }
 
   // Standard log format, [message, data]
