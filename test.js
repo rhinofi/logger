@@ -38,3 +38,7 @@ logger.emergency(
     }
   }
 )
+
+// Valid logs
+logger.log('Some message', { id1: 'id1', id2: 'id2', nestedProp: { id3: 'id3' } })
+logger.error('Some error occured', new Error('some error'))
