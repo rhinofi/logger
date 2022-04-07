@@ -119,7 +119,7 @@ const formatData = (data) => {
   if (simpleTypes.includes(typeof data)) 
     return `${stringifySimple(data)}`
 
-  if (typeof data == 'object')
+  if (typeof data === 'object')
     return data
 }
 
@@ -130,7 +130,7 @@ const invalidInvocation = (args, extraTypesForMessage) => {
 
 const parseArgsV2 = (args, extraTypesForMessage) => {
   if (args.length == 1) {
-    if (typeof args[0] == 'string') {
+    if (typeof args[0] === 'string') {
       return {
         message: args[0]
       }
