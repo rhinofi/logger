@@ -151,6 +151,11 @@ const parseArgsV2 = (args, extraTypesForMessage) => {
       return {
         message: args[0]
       }
+    } else if (args[0] instanceof Error) {
+      return {
+        message: stringifyException(args[0]),
+        error: args[0]
+      }
     } else {
       return invalidInvocation(args, extraTypesForMessage)
     }
@@ -173,12 +178,15 @@ const parseArgsV2 = (args, extraTypesForMessage) => {
   }
 }
 
+/** @typedef {(message: string, data?: Object | Error) => void} LoggerFunction */
+/** @typedef {(exception: Error) => void} ErrorLoggerFunction */
+
 /**
  * 
  * @param {string} severity 
  * @param {string} context 
  * @param {Object} extraTypesForMessage 
- * @returns {(message: string, data?: Object | Error) => void}
+ * @returns {LoggerFunction | ErrorLoggerFunction}
  */
 const makeStrictLogger = (severity, context, extraTypesForMessage) => {
   const debugLogger = debug(`dvf:${severity}:${context}`)
