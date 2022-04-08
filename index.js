@@ -56,6 +56,9 @@ const root =
 const PRETTY = Boolean(process.env.PRETTY)
 const DEPTH = process.env.DEPTH
 const DEBUG = process.env.DEBUG
+const EXTRA_PROPS = (process.env.EXTRA_PROPS && JSON.parse(EXTRA_PROPS)) || {}
+const EXTRA_ERROR_PROPS = (process.env.EXTRA_ERROR_PROPS && JSON.parse(EXTRA_ERROR_PROPS))
+  || ({ '@type': 'type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent'})
 
 const LEVELS = ['DEBUG', 'LOG', 'WARN', 'ERROR', 'EMERGENCY']
 
@@ -67,6 +70,8 @@ const simpleTypes = [
   'symbol',
   'undefined'
 ]
+
+const globalCustomFormatters = {}
 
 const levelsHasDebug = LEVELS.includes(DEBUG)
 
@@ -128,6 +133,18 @@ const invalidInvocation = (args, extraTypesForMessage) => {
   return parseArgs(args, extraTypesForMessage)
 }
 
+const findException = (data) => {
+  if (!data) return
+
+  const items = [data, data.error, data.err]
+  const error = items.find((item) => item instanceof Error)
+
+  return error
+}
+
+const stringifyException = (exception) => 
+  `${exception.name} ${exception.message}\n${exception.stack}`
+
 const parseArgsV2 = (args, extraTypesForMessage) => {
   if (args.length == 1) {
     if (typeof args[0] === 'string') {
@@ -143,22 +160,16 @@ const parseArgsV2 = (args, extraTypesForMessage) => {
 
   // Standard log format, [message, data]
   const [message, data] = args
+  const exception = findException(data)
 
-  if (data instanceof Error) {
-    return {
-      message: `${message} | ${data.message}`,
-      error: {
-        name: data.name,
-        message: data.message,
-        data: data.data,
-        stack: data.stack
-      }
-    }
-  }
+  const finalMessage = exception
+  ? `${message} | ${stringifyException(exception)}`
+  : message
 
   return {
-    message,
-    data: formatData(data, DEPTH)
+    message: finalMessage,
+    data: formatData(data, DEPTH),
+    error: exception
   }
 }
 
@@ -175,17 +186,21 @@ const makeStrictLogger = (severity, context, extraTypesForMessage) => {
   const logger = (...args) => {
     if (!logger.enabled) return
 
-    const gcpProps = {
-      'logging.googleapis.com/sourceLocation': {
-        file: context
-      }
-    }
 
     const { message, data, error } = parseArgsV2(args, extraTypesForMessage)
+
+    const extraProps = {
+      'logging.googleapis.com/sourceLocation': {
+        file: context
+      },
+       ...(error && EXTRA_ERROR_PROPS),
+       ...EXTRA_PROPS
+    }
+
     const payload = { severity, timestamp: Date.now(), context, message,
        ...(data && { data }),
        ...(error && { error }),
-       ...(!PRETTY && gcpProps)
+       ...(!PRETTY && extraProps)
        }
 
     if (PRETTY) {
@@ -194,7 +209,7 @@ const makeStrictLogger = (severity, context, extraTypesForMessage) => {
       } | ${payload.context} |`
       console.log(format, payload.message, payload.data)
     } else {
-      console.log(stringify(payload, DEPTH))
+      console.log(stringify(payload, DEPTH, globalCustomFormatters))
     }
   }
 
@@ -230,4 +245,11 @@ module.exports = function (
   })
 
   return loggers
+}
+
+/**
+ * @type {(globalFormatters: {[typeName: string]: (Object) => string}} 
+ */
+module.exports.setGlobalCustomFormatters = (globalFormatters) => {
+  globalCustomFormatters = globalFormatters
 }
