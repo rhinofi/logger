@@ -188,7 +188,7 @@ const parseArgsV2 = (args, extraTypesForMessage) => {
  * @param {Object} extraTypesForMessage 
  * @returns {LoggerFunction | ErrorLoggerFunction}
  */
-const makeStrictLogger = (severity, context, extraTypesForMessage) => {
+const makeStrictLogger = (severity, context, extraTypesForMessage, hasErrorProps) => {
   const debugLogger = debug(`dvf:${severity}:${context}`)
 
   const logger = (...args) => {
@@ -201,7 +201,7 @@ const makeStrictLogger = (severity, context, extraTypesForMessage) => {
       'logging.googleapis.com/sourceLocation': {
         file: context
       },
-       ...(error && EXTRA_ERROR_PROPS),
+       ...(error && hasErrorProps && EXTRA_ERROR_PROPS),
        ...EXTRA_PROPS
     }
 
@@ -238,11 +238,12 @@ module.exports = function (
     debug: makeStrictLogger(LEVELS[0], relativeFilePath, extraTypesForMessage),
     log: makeStrictLogger(LEVELS[1], relativeFilePath, extraTypesForMessage),
     warn: makeStrictLogger(LEVELS[2], relativeFilePath, extraTypesForMessage),
-    error: makeStrictLogger(LEVELS[3], relativeFilePath, extraTypesForMessage),
+    error: makeStrictLogger(LEVELS[3], relativeFilePath, extraTypesForMessage, true),
     emergency: makeStrictLogger(
       LEVELS[4],
       relativeFilePath,
-      extraTypesForMessage
+      extraTypesForMessage,
+      true
     )
   }
 
