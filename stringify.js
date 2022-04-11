@@ -1,11 +1,17 @@
 const escapeString = (str) => str && str.replace(/[\n\r]/g, '')
-const stringify = (data, depth = 5) => {
+// Won't work for minified class names however we need something fast
+// That does not require iterating through everything
+const fetchTypeName = (data) => data && data.constructor && data.constructor.name
+const stringify = (data, depth = 5, customFormatters = {}) => {
+  const typename = fetchTypeName(data)
   return data === undefined
     ? 'null'
     : !data
     ? JSON.stringify(data)
     : typeof data === 'object' && !Array.isArray(data)
-    ? depth < 1
+    ? customFormatters[typename]
+    ? customFormatters[typename](data)
+    : depth < 1
       ? '"{ ? }"'
       : `{${Object.keys(data)
           .map(
