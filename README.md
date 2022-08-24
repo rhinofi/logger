@@ -31,21 +31,20 @@ For example:
 DEBUG='dvf:*'
 ```
 
-  will cause all logs which start with `dvf:` to be output to console
+will cause all logs which start with `dvf:` to be output to console
 
 ```
 DEBUG='dvf:ERROR:*'
 ```
 
-  will result in only calls to `lgr.error` to be logged
+will result in only calls to `lgr.error` to be logged
 
 ```
 DEBUG="dvf:*:$RELATIVE_FILE_PATH"
 ```
 
-  will show all types of logs but only from the file with the specified path
-  within the project
-
+will show all types of logs but only from the file with the specified path
+within the project
 
 The lazy loggers can be used to log stuff which requires some pre-processing. If
 any of the arguments passed to those loggers is a function, it will be called to
