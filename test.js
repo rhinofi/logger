@@ -8,7 +8,7 @@ logger.error(new Error('Only Error'))
 logger.debug('Debug message', { field1: 'stuff' }, true, new Date(), 123)
 logger.log('some information here', [
   { field1: 'stuff' },
-  { field1: 'more stuff' }
+  { field1: 'more stuff' },
 ])
 logger.warn('warning, attention', new Error('what?'))
 logger.error('error, not good', new Error('some pretty looking stack trace'))
@@ -28,17 +28,21 @@ logger.emergency(
             level5: {
               level6: {
                 level7: {
-                  level8: 'level9999'
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+                  level8: 'level9999',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
 )
 
 // Valid logs
-logger.log('Some message', { id1: 'id1', id2: 'id2', nestedProp: { id3: 'id3' } })
+logger.log('Some message', {
+  id1: 'id1',
+  id2: 'id2',
+  nestedProp: { id3: 'id3' },
+})
 logger.error('Some error occured', new Error('some error'))

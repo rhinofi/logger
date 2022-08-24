@@ -33,7 +33,6 @@ DEBUG="dvf:*:$RELATIVE_FILE_PATH"
   will show all types of logs but only from the file with the specified path
   within the project
 
-
 The lazy loggers can be used to log stuff which requires some pre-processing. If
 any of the arguments passed to those loggers is a function, it will be called to
 get the value to be logged, however this will only happen if given logger is
@@ -46,19 +45,20 @@ const { stringify, stringifySimple } = require('./stringify')
 
 // This is a string, or a regex, which will be matched against the __filename.
 // Whatever it matches will be removed.
-const root =
-  process.env.DVF_LOGGER_ROOT ||
+const defaultRoot = process.env.DVF_LOGGER_ROOT
   // This is the directory from which node process was launched.
   // We use it as default root since it gives relative paths which can be
   // clicked on (in terminals such as iTerm) to open the file in an editor.
-  `${process.cwd()}/`
+  || `${process.cwd()}/`
 
 const PRETTY = Boolean(process.env.PRETTY)
-const DEPTH = process.env.DEPTH
-const DEBUG = process.env.DEBUG
-const EXTRA_PROPS = (process.env.EXTRA_PROPS && JSON.parse(EXTRA_PROPS)) || {}
-const EXTRA_ERROR_PROPS = (process.env.EXTRA_ERROR_PROPS && JSON.parse(EXTRA_ERROR_PROPS))
-  || ({ '@type': 'type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent'})
+const { DEPTH } = process.env
+const EXTRA_PROPS = JSON.parse(process.env.EXTRA_PROPS || '{}')
+const EXTRA_ERROR_PROPS = JSON.parse(process.env.EXTRA_ERROR_PROPS || '{}')
+  || ({
+    '@type':
+      'type.googleapis.com/google.devtools.clouderrorreporting.v1beta1.ReportedErrorEvent',
+  })
 
 const LEVELS = ['DEBUG', 'LOG', 'WARN', 'ERROR', 'EMERGENCY']
 
@@ -68,28 +68,23 @@ const simpleTypes = [
   'number',
   'string',
   'symbol',
-  'undefined'
+  'undefined',
 ]
 
-const globalCustomFormatters = {}
+let globalCustomFormatters = {}
 
-const levelsHasDebug = LEVELS.includes(DEBUG)
+const expandThunks = array =>
+  array.map(elem => (typeof elem === 'function' ? elem() : elem))
 
-const expandThunks = (array) =>
-  array.map((elem) => (typeof elem == 'function' ? elem() : elem))
-
-const makeLazyLogger = (strictLogger) => {
-  return strictLogger.enabled
-    ? // call it with functions expanded to actual values
-      (...args) => strictLogger.apply(strictLogger, expandThunks(args))
-    : // no-op
-      () => {}
-}
+const makeLazyLogger = strictLogger => (strictLogger.enabled
+  // call it with functions expanded to actual values
+  ? (...args) => strictLogger.apply(strictLogger, expandThunks(args))
+  : () => {})
 
 const parseArgs = (args, extraTypesForMessage) => {
   let message = ''
   const data = args
-    .map((arg) => {
+    .map(arg => {
       if (simpleTypes.includes(typeof arg)) {
         message += `${stringifySimple(arg)}`
       } else if (arg instanceof Error) {
@@ -101,9 +96,9 @@ const parseArgs = (args, extraTypesForMessage) => {
           name: arg.name,
           message: arg.message,
           data: arg.data,
-          stack: arg.stack
+          stack: arg.stack,
         }
-      } else if (typeof arg == 'object') {
+      } else if (typeof arg === 'object') {
         if (extraTypesForMessage && extraTypesForMessage.length) {
           for (const extraType of extraTypesForMessage) {
             if (arg instanceof extraType) {
@@ -112,20 +107,24 @@ const parseArgs = (args, extraTypesForMessage) => {
           }
 
           return arg
-        } else return arg
+        }
+        return arg
       }
+      return undefined
     })
     .filter(Boolean)
 
   return { message, data }
 }
 
-const formatData = (data) => {
-  if (simpleTypes.includes(typeof data)) 
+const formatData = data => {
+  if (simpleTypes.includes(typeof data)) {
     return `${stringifySimple(data)}`
+  }
 
-  if (typeof data === 'object')
+  if (typeof data === 'object') {
     return data
+  }
 }
 
 const invalidInvocation = (args, extraTypesForMessage) => {
@@ -133,33 +132,34 @@ const invalidInvocation = (args, extraTypesForMessage) => {
   return parseArgs(args, extraTypesForMessage)
 }
 
-const findException = (data) => {
+const findException = data => {
   if (!data) return
 
   const items = [data, data.error, data.err]
-  const error = items.find((item) => item instanceof Error)
+  const error = items.find(item => item instanceof Error)
 
   return error
 }
 
-const stringifyException = (exception) => 
+const stringifyException = exception =>
   `${exception.name} ${exception.message}\n${exception.stack}`
 
 const parseArgsV2 = (args, extraTypesForMessage) => {
-  if (args.length == 1) {
+  if (args.length === 1) {
     if (typeof args[0] === 'string') {
       return {
-        message: args[0]
+        message: args[0],
       }
-    } else if (args[0] instanceof Error) {
+    }
+    if (args[0] instanceof Error) {
       return {
         message: stringifyException(args[0]),
-        error: args[0]
+        error: args[0],
       }
-    } else {
-      return invalidInvocation(args, extraTypesForMessage)
     }
-  } else if (args.length > 2) {
+    return invalidInvocation(args, extraTypesForMessage)
+  }
+  if (args.length > 2) {
     return invalidInvocation(args, extraTypesForMessage)
   }
 
@@ -168,13 +168,13 @@ const parseArgsV2 = (args, extraTypesForMessage) => {
   const exception = findException(data)
 
   const finalMessage = exception
-  ? `${message} | ${stringifyException(exception)}`
-  : message
+    ? `${message} | ${stringifyException(exception)}`
+    : message
 
   return {
     message: finalMessage,
     data: formatData(data, DEPTH),
-    error: exception
+    error: exception,
   }
 }
 
@@ -182,39 +182,46 @@ const parseArgsV2 = (args, extraTypesForMessage) => {
 /** @typedef {(exception: Error) => void} ErrorLoggerFunction */
 
 /**
- * 
- * @param {string} severity 
- * @param {string} context 
- * @param {Object} extraTypesForMessage 
+ * @param {string} severity
+ * @param {string} context
+ * @param {Object} extraTypesForMessage
  * @returns {LoggerFunction | ErrorLoggerFunction}
  */
-const makeStrictLogger = (severity, context, extraTypesForMessage, hasErrorProps) => {
+const makeStrictLogger = (
+  severity,
+  context,
+  extraTypesForMessage,
+  hasErrorProps,
+) => {
   const debugLogger = debug(`dvf:${severity}:${context}`)
 
   const logger = (...args) => {
     if (!logger.enabled) return
 
-
     const { message, data, error } = parseArgsV2(args, extraTypesForMessage)
 
     const extraProps = {
       'logging.googleapis.com/sourceLocation': {
-        file: context
+        file: context,
       },
-       ...(error && hasErrorProps && EXTRA_ERROR_PROPS),
-       ...EXTRA_PROPS
+      ...(error && hasErrorProps && EXTRA_ERROR_PROPS),
+      ...EXTRA_PROPS,
     }
 
-    const payload = { severity, timestamp: Date.now(), context, message,
-       ...(data && { data }),
-       ...(error && { error }),
-       ...(!PRETTY && extraProps)
-       }
+    const payload = {
+      severity,
+      timestamp: Date.now(),
+      context,
+      message,
+      ...(data && { data }),
+      ...(error && { error }),
+      ...(!PRETTY && extraProps),
+    }
 
     if (PRETTY) {
-      const format = `${new Date(payload.timestamp).toISOString()} | ${
-        payload.severity
-      } | ${payload.context} |`
+      const format = `${
+        new Date(payload.timestamp).toISOString()
+      } | ${payload.severity} | ${payload.context} |`
       console.log(format, payload.message, payload.data)
     } else {
       console.log(stringify(payload, DEPTH, globalCustomFormatters))
@@ -226,11 +233,11 @@ const makeStrictLogger = (severity, context, extraTypesForMessage, hasErrorProps
   return logger
 }
 
-module.exports = function (
+module.exports = (
   filename,
-  options = { root, extraTypesForMessage: [] }
-) {
-  const { root, extraTypesForMessage } = options
+  options = { root: defaultRoot, extraTypesForMessage: [] },
+) => {
+  const { root = defaultRoot, extraTypesForMessage } = options
 
   const relativeFilePath = filename.replace(new RegExp(`^${root}`), '')
 
@@ -238,18 +245,23 @@ module.exports = function (
     debug: makeStrictLogger(LEVELS[0], relativeFilePath, extraTypesForMessage),
     log: makeStrictLogger(LEVELS[1], relativeFilePath, extraTypesForMessage),
     warn: makeStrictLogger(LEVELS[2], relativeFilePath, extraTypesForMessage),
-    error: makeStrictLogger(LEVELS[3], relativeFilePath, extraTypesForMessage, true),
+    error: makeStrictLogger(
+      LEVELS[3],
+      relativeFilePath,
+      extraTypesForMessage,
+      true,
+    ),
     emergency: makeStrictLogger(
       LEVELS[4],
       relativeFilePath,
       extraTypesForMessage,
-      true
-    )
+      true,
+    ),
   }
 
   // Decorates each logger with .lazy prop, which contains the lazy version
   // of the logger.
-  Object.values(loggers).forEach((logger) => {
+  Object.values(loggers).forEach(logger => {
     logger.lazy = makeLazyLogger(logger)
   })
 
@@ -257,8 +269,8 @@ module.exports = function (
 }
 
 /**
- * @type {(globalFormatters: {[typeName: string]: (Object) => string}} 
+ * @type {(globalFormatters: {[typeName: string]: (Object) => string}}
  */
-module.exports.setGlobalCustomFormatters = (globalFormatters) => {
+module.exports.setGlobalCustomFormatters = globalFormatters => {
   globalCustomFormatters = globalFormatters
 }
