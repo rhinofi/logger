@@ -1,14 +1,14 @@
 {
-  "launch-deversifi": {
-    "branch": "dev",
-    "description": "Instructions to deploy the required services for DeversiFi Exchange",
-    "homepage": "",
-    "owner": "rhinofi",
-    "repo": "launch-deversifi",
-    "rev": "2fe7a3fd74c4d6afc09249741fd2be97598fb48e",
-    "sha256": "1r5zrvp6fvk2rx09hqxh4h9fjmibzkfiv7r5pfhm636lb43zwc0f",
-    "type": "tarball",
-    "url": "https://github.com/rhinofi/launch-deversifi/archive/2fe7a3fd74c4d6afc09249741fd2be97598fb48e.tar.gz",
-    "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-  }
+    "launch-deversifi": {
+        "branch": "dev",
+        "description": "Instructions to deploy the required services for DeversiFi Exchange",
+        "homepage": "",
+        "owner": "rhinofi",
+        "repo": "launch-deversifi",
+        "rev": "53a0beb3d8d7846559bf69b6e09abcd6f3eb57dd",
+        "sha256": "038x41fc22b9sfjsy078hql5yzkpc68j0q5sndingx957s21y899",
+        "type": "tarball",
+        "url": "https://github.com/rhinofi/launch-deversifi/archive/53a0beb3d8d7846559bf69b6e09abcd6f3eb57dd.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    }
 }
