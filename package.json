@@ -1,6 +1,6 @@
 {
   "name": "dvf-logger",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "a thin wrapper around debug module",
   "main": "index.js",
   "repository": "git@github.com:DeversiFi/logger.git",
@@ -8,5 +8,8 @@
   "license": "MIT",
   "dependencies": {
     "debug": "^4.3.2"
+  },
+  "devDependencies": {
+    "bson": "^1.1.5"
   }
 }

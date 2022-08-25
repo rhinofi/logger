@@ -12,6 +12,8 @@ const stringify = (data, depth = 5, customFormatters = {}) => {
     : typeof data === 'object' && !Array.isArray(data)
     ? customFormatters[typename]
       ? customFormatters[typename](data)
+      : data.toJSON
+      ? stringify(data.toJSON(), depth)
       : depth < 1
       ? '"{ ? }"'
       : `{${
@@ -33,8 +35,10 @@ const stringify = (data, depth = 5, customFormatters = {}) => {
     : JSON.stringify(data)
 }
 
-const stringifySimple = data => (typeof data === 'string'
-  ? escapeString(data)
-  : data)
+const stringifySimple = data => (
+  typeof data === 'string'
+    ? escapeString(data)
+    : data
+)
 
 module.exports = { stringify, stringifySimple }
