@@ -5,10 +5,10 @@
         "homepage": "",
         "owner": "rhinofi",
         "repo": "launch-deversifi",
-        "rev": "de6cb9f3bb9b5232a481cede1ffeb7e382dfc4d0",
-        "sha256": "0k1vsvvc0dhk38j9qx0xksjhrxxdr241f1y61i57nzi1fm3lvymm",
+        "rev": "a65f7701ea264a8d23d7aac135c75e7885a4194c",
+        "sha256": "0xkdcjm6kw8yr74kx3v9pdlk2vf2m76j24201fir97g129rm4w7g",
         "type": "tarball",
-        "url": "https://github.com/rhinofi/launch-deversifi/archive/de6cb9f3bb9b5232a481cede1ffeb7e382dfc4d0.tar.gz",
+        "url": "https://github.com/rhinofi/launch-deversifi/archive/a65f7701ea264a8d23d7aac135c75e7885a4194c.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
