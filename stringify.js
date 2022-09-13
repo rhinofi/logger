@@ -12,7 +12,7 @@ const stringify = (data, depth = 5, customFormatters = {}) => {
     : typeof data === 'object' && !Array.isArray(data)
     ? customFormatters[typename]
       ? customFormatters[typename](data)
-      : data.toJSON
+      : typeof data.toJSON === 'function'
       ? stringify(data.toJSON(), depth)
       : depth < 1
       ? '"{ ? }"'
