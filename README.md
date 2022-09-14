@@ -55,12 +55,12 @@ have been logged anyway.
 
 # Publishing to our npm registry
 
-Things to keep check before publishing:
+Things to check before publishing:
 - any newly added source files which are to be included in the package have been added to "files" list in `package.json`
 - `version` in `package.json` has been updated appropriately
+- you have a github token in your ~/.netrc file with permissions to publish the package
 
 From nix shell:
-
 ```sh
 npm-publish
 ```
