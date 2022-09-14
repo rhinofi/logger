@@ -51,3 +51,16 @@ any of the arguments passed to those loggers is a function, it will be called to
 get the value to be logged, however this will only happen if given logger is
 enabled. This way we can avoid paying for pre-processing if the value would not
 have been logged anyway.
+
+
+# Publishing to our npm registry
+
+Things to check before publishing:
+- any newly added source files which are to be included in the package have been added to "files" list in `package.json`
+- `version` in `package.json` has been updated appropriately
+- you have a github token in your ~/.netrc file with permissions to publish the package
+
+From nix shell:
+```sh
+npm-publish
+```
