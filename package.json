@@ -1,6 +1,6 @@
 {
-  "name": "@rhinofi/logger",
-  "version": "test",
+  "name": "@rhino.fi/logger",
+  "version": "1.1.2",
   "description": "a thin wrapper around debug module",
   "main": "index.js",
   "repository": "git://github.com/rhinofi/logger.git",
@@ -11,9 +11,6 @@
   },
   "devDependencies": {
     "bson": "^1.1.5"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
   },
   "files": [
     "index.js",
