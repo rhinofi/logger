@@ -18,7 +18,7 @@ type loggerMethod = loggerMethod1 & loggerMethod2 & {
   lazy: loggerMethod1Lazy & loggerMethod2Lazy
 }
 
-declare module '@rhinofi/logger' {
+declare module '@rhino.fi/logger' {
   export interface Logger {
     debug: loggerMethod
     log: loggerMethod
