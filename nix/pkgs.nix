@@ -44,10 +44,10 @@ let
     overlays
   ;
 
-  # This can be used to work against local version of copy of launch-deversifi
+  # This can be used to work against local version of copy of rhino-core
   # repo instead of specific git commit defined in sources.json
-  # pkgsBasePath = ../../launch-deversifi;
-  pkgsBasePath = sources.launch-deversifi;
+  # pkgsBasePath = ../../rhino-core;
+  pkgsBasePath = sources.rhino-core;
   pkgsPath = pkgsBasePath + "/nix/pkgs.nix";
 in
   import pkgsPath { inherit config system; overlays = allOverlays; }
