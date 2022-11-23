@@ -14,18 +14,19 @@ type loggerMethod2Lazy = (
   lazyY: LaziFy<Parameters<loggerMethod2>[1]>,
 ) => void
 
-type loggerMethod = loggerMethod1 & loggerMethod2 & {
-  lazy: loggerMethod1Lazy & loggerMethod2Lazy
-}
+type loggerMethod =
+  & loggerMethod1
+  & loggerMethod2
+  & Readonly<{ lazy: loggerMethod1Lazy & loggerMethod2Lazy }>
 
 declare module '@rhino.fi/logger' {
-  export interface Logger {
-    debug: loggerMethod
-    log: loggerMethod
-    warn: loggerMethod
-    error: loggerMethod
-    emergency: loggerMethod
-  }
+  export type Logger = Readonly<{
+    readonly debug: loggerMethod
+    readonly log: loggerMethod
+    readonly warn: loggerMethod
+    readonly error: loggerMethod
+    readonly emergency: loggerMethod
+  }>
 
   type loggerFactory = (__filename: string) => Logger
 
