@@ -21,11 +21,11 @@ type loggerMethod =
 
 declare module '@rhino.fi/logger' {
   export type Logger = Readonly<{
-    readonly debug: loggerMethod
-    readonly log: loggerMethod
-    readonly warn: loggerMethod
-    readonly error: loggerMethod
-    readonly emergency: loggerMethod
+    debug: loggerMethod
+    log: loggerMethod
+    warn: loggerMethod
+    error: loggerMethod
+    emergency: loggerMethod
   }>
 
   type loggerFactory = (__filename: string) => Logger
